@@ -12,9 +12,12 @@ func JSON(w http.ResponseWriter, statusCode int, dados interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 
-	if erro := json.NewEncoder(w).Encode(dados); erro != nil {
-		//Aqui sim, caso de algum erro, deve-se matar a aplicação.
-		log.Fatal(erro)
+	// Essa validação refere-se ao Atualizar, pois não tem retorno no body "dados == nil", esse metodo só serve para os outros que possui retorno
+	if dados != nil {
+		if erro := json.NewEncoder(w).Encode(dados); erro != nil {
+			//Aqui sim, caso de algum erro, deve-se matar a aplicação.
+			log.Fatal(erro)
+		}
 	}
 }
 
