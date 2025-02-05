@@ -25,6 +25,7 @@ Criar(usuario  modelos.Usuario) => Metodo que recebe um modelo Usuario como para
 obs: uint NUNCA terá valor negativo.
 */
 func (repositorio Usuarios) Criar(usuario modelos.Usuario) (uint64, error) {
+	// Quando utilizado "Prepare" nao passamos as variaveis, somente depois para evitar sql injection
 	statement, erro := repositorio.db.Prepare("insert into usuarios  (nome, nick, email, senha) values(?, ?, ?, ?)")
 	if erro != nil {
 		return 0, erro
@@ -143,4 +144,24 @@ func (repositorio Usuarios) Deletar(ID uint64) error {
 	}
 
 	return nil
+}
+
+// BuscarPorEmail busca um usuario por email e retorna o seu id e senha com rash
+func (repositorio Usuarios) BuscarPorEmail(email string) (modelos.Usuario, error) {
+	linha, erro := repositorio.db.Query("select id, senha from usuarios where email = ?", email)
+	if erro != nil {
+		//retornando um usuario vazio e um erro
+		return modelos.Usuario{}, erro
+	}
+	defer linha.Close()
+
+	var usuario modelos.Usuario
+
+	if linha.Next() {
+		if erro = linha.Scan(&usuario.ID, &usuario.Senha); erro != nil {
+			return modelos.Usuario{}, erro
+		}
+	}
+
+	return usuario, nil
 }
