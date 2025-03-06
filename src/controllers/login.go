@@ -46,6 +46,9 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	w.Write([]byte("Você está Autenticado!"))
 
-	token, _ := autenticacao.CriarToken(usuarioSalvoNoBanco.ID)
+	token, erro := autenticacao.CriarToken(usuarioSalvoNoBanco.ID)
+	if erro != nil {
+		respostas.Erro(w, http.StatusInternalServerError, erro)
+	}
 	w.Write([]byte(token))
 }
