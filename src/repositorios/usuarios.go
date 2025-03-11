@@ -165,3 +165,115 @@ func (repositorio Usuarios) BuscarPorEmail(email string) (modelos.Usuario, error
 
 	return usuario, nil
 }
+
+// Seguir permite que um usuario siga outro
+func (repositorio Usuarios) Seguir(usuarioID, seguidorID uint64) error {
+	//insert ignore => caso ja exista o dado ele n insere (n deixa inserir caso ja exista uma chave primaria com usuario_id e seguidor_id)
+	statement, erro := repositorio.db.Prepare(
+		"insert ignore into seguidores (usuario_id, seguidor_id) values (?, ?)",
+	)
+	if erro != nil {
+		return erro
+	}
+	defer statement.Close()
+
+	if _, erro = statement.Exec(usuarioID, seguidorID); erro != nil {
+		return erro
+	}
+
+	return nil
+}
+
+// PararDeSeguir permite que um usuario para de siga outro
+func (repositorio Usuarios) PararDeSeguir(usuarioID, seguidorID uint64) error {
+	statement, erro := repositorio.db.Prepare(
+		"delete from seguidores where usuario_id = ? and seguidor_id = ?",
+	)
+	if erro != nil {
+		return erro
+	}
+	defer statement.Close()
+
+	if _, erro = statement.Exec(usuarioID, seguidorID); erro != nil {
+		return erro
+	}
+
+	return nil
+}
+
+// BuscarSeguidores traz todos os seguidores de um usuário
+func (repositorio Usuarios) BuscarSeguidores(usuarioID uint64) ([]modelos.Usuario, error) {
+	linhas, erro := repositorio.db.Query(`
+		select u.id, u.nome, u.nick, u.email, u.criadoEm
+		from usuarios u inner join seguidores s on u.id = s.seguidor_id
+		where s.usuario_id = ?`,
+		usuarioID,
+	)
+	if erro != nil {
+		return nil, erro
+	}
+	defer linhas.Close()
+
+	var usuarios []modelos.Usuario
+
+	for linhas.Next() {
+		var usuario modelos.Usuario
+		if erro = linhas.Scan(
+			&usuario.ID,
+			&usuario.Nome,
+			&usuario.Nick,
+			&usuario.Email,
+			&usuario.CriadoEm,
+		); erro != nil {
+			return nil, erro
+		}
+
+		usuarios = append(usuarios, usuario)
+	}
+
+	return usuarios, nil
+
+	/*
+		select u.id, u.nome, u.email, u.criadoEm
+		from usuarios u inner join seguidores s on u.id = s.seguidor_id
+		where s.usuario_id = ?
+
+		Estamos dando um join na tabela usuario com as de seguidores, onde o u.id seja igual
+		ao s.seguidor_id da tabela seguidores e pedindo para ele buscar todos as linhas onde o
+		usuario_id seja oq eu passar
+
+	*/
+}
+
+// BuscarSeguindo traz todos os usuarios que um determinado usuario segue
+func (repositorio Usuarios) BuscarSeguindo(usuarioID uint64) ([]modelos.Usuario, error) {
+	linhas, erro := repositorio.db.Query(`
+		select u.id, u.nome, u.nick, u.email, u.criadoEm
+		from usuarios u inner join seguidores s on u.id = s.usuario_id
+		where s.seguidor_id = ?`,
+		usuarioID,
+	)
+	if erro != nil {
+		return nil, erro
+	}
+	defer linhas.Close()
+
+	var usuarios []modelos.Usuario
+
+	for linhas.Next() {
+		var usuario modelos.Usuario
+		if erro = linhas.Scan(
+			&usuario.ID,
+			&usuario.Nome,
+			&usuario.Nick,
+			&usuario.Email,
+			&usuario.CriadoEm,
+		); erro != nil {
+			return nil, erro
+		}
+
+		usuarios = append(usuarios, usuario)
+	}
+
+	return usuarios, nil
+}
