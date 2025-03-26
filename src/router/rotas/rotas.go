@@ -19,6 +19,8 @@ type Rota struct {
 func Configurar(r *mux.Router) *mux.Router {
 	rotas := rotasUsuarios
 	rotas = append(rotas, rotaLogin)
+	// rotasPublicacoes... => os ... é pq rotasPublicacoes é um array de rotas []rotas
+	rotas = append(rotas, rotasPublicacoes...)
 
 	for _, rota := range rotas {
 		//Validando se a rota precisa estar autenticado
